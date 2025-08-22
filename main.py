@@ -1,21 +1,15 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-import subprocess
-import json
+import yt_dlp
 
 app = FastAPI()
 
 @app.get("/api")
 def download_info(url: str = Query(..., description="Video URL kerak")):
     try:
-        # yt-dlp ni JSON formatda ishga tushirish
-        command = ["yt-dlp", "-j", url]
-        result = subprocess.run(command, capture_output=True, text=True)
-
-        if result.stdout:
-            data = json.loads(result.stdout)
-            return JSONResponse(content=data)
-        else:
-            return JSONResponse(content={"error": "Video yuklab bo‘lmadi"}, status_code=500)
+        ydl_opts = {}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)  # download=False faqat info uchun
+            return JSONResponse(content=info)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
